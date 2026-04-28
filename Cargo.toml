@@ -6,9 +6,15 @@ edition = "2021"
 [dependencies]
 anyhow = "1"
 dotenvy = "0.15"
-odbc-api = "10"
 regex = "1"
 ratatui = "=0.26.3"
 crossterm = "=0.27.0"
 unicode-segmentation = "=1.12.0"
 rusqlite = { version = "0.31", features = ["bundled"] }
+postgres = { version = "0.19", default-features = false }
+mysql = { version = "25", default-features = false, features = ["minimal"] }
+oracle-rs = "0.1.7"
+tiberius = { version = "0.12", default-features = false, features = ["tds73", "rustls", "tokio", "tokio-util"] }
+tokio = { version = "1", features = ["rt", "net"] }
+tokio-util = { version = "0.7", features = ["compat"] }
+futures-util = "0.3"

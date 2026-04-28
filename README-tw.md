@@ -37,33 +37,33 @@ cargo build --release
 
 ## 命令列參數
 
-| 參數 | 說明 | 預設值 |
-|--------|------------|---------|
-| `--host` | 資料庫伺服器主機 | - |
-| `--port` | 資料庫伺服器連接埠 | - |
-| `--user` | 資料庫使用者 | - |
-| `--password` | 資料庫密碼 | - |
-| `--db-name` | 資料庫名稱 | - |
-| `--db-type` | 資料庫類型：mssql/oracle/mysql/postgresql/sqlite | mssql |
-| `--objects` | 要匯出的資料表（pattern、@file 或 @sql:file） | - |
-| `--condition` | WHERE 子句條件 | - |
-| `--order-by` | ORDER BY 子句 | - |
-| `--hide-primary-key` | 排除主鍵欄位 | false |
-| `--output-format` | 輸出格式：sql/sqlite/csv/excel/json/xml/md | sql |
-| `--output-dir` | 輸出目錄 | ./export |
-| `--compress` | 壓縮輸出：zip/bzip/tar | - |
-| `--delete-after-compress` | 壓縮後刪除檔案 | false |
-| `--page-size` | 匯出每頁資料列數 | 10000 |
-| `--page-no` | 要匯出的頁碼 | - |
-| `--lang` | 語言：en/tw/ja | en |
-| `--tui` | 使用互動式 TUI 模式 | false |
-| `--import` | 執行匯入模式 | false |
-| `--import-host` | 匯入目標主機 | - |
-| `--import-port` | 匯入目標連接埠 | - |
-| `--import-db-type` | 匯入目標類型 | - |
-| `--import-user` | 匯入目標使用者 | - |
-| `--import-password` | 匯入目標密碼 | - |
-| `--import-db-name` | 匯入目標資料庫 | - |
+| 參數                      | 說明                                             | 預設值   |
+| ------------------------- | ------------------------------------------------ | -------- |
+| `--host`                  | 資料庫伺服器主機                                 | -        |
+| `--port`                  | 資料庫伺服器連接埠                               | -        |
+| `--user`                  | 資料庫使用者                                     | -        |
+| `--password`              | 資料庫密碼                                       | -        |
+| `--db-name`               | 資料庫名稱                                       | -        |
+| `--db-type`               | 資料庫類型：mssql/oracle/mysql/postgresql/sqlite | mssql    |
+| `--objects`               | 要匯出的資料表（pattern、@file 或 @sql:file）    | -        |
+| `--condition`             | WHERE 子句條件                                   | -        |
+| `--order-by`              | ORDER BY 子句                                    | -        |
+| `--hide-primary-key`      | 排除主鍵欄位                                     | false    |
+| `--output-format`         | 輸出格式：sql/sqlite/csv/excel/json/xml/md       | sql      |
+| `--output-dir`            | 輸出目錄                                         | ./export |
+| `--compress`              | 壓縮輸出：zip/bzip/tar                           | -        |
+| `--delete-after-compress` | 壓縮後刪除檔案                                   | false    |
+| `--page-size`             | 匯出每頁資料列數                                 | 10000    |
+| `--page-no`               | 要匯出的頁碼                                     | -        |
+| `--lang`                  | 語言：en/tw/ja                                   | en       |
+| `--tui`                   | 使用互動式 TUI 模式                              | false    |
+| `--import`                | 執行匯入模式                                     | false    |
+| `--import-host`           | 匯入目標主機                                     | -        |
+| `--import-port`           | 匯入目標連接埠                                   | -        |
+| `--import-db-type`        | 匯入目標類型                                     | -        |
+| `--import-user`           | 匯入目標使用者                                   | -        |
+| `--import-password`       | 匯入目標密碼                                     | -        |
+| `--import-db-name`        | 匯入目標資料庫                                   | -        |
 
 ## 物件選擇器語法
 
@@ -155,7 +155,7 @@ src/
 ## 相依套件
 
 - Rust 2021 edition
-- odbc-api
+- 原生資料庫連線套件：tiberius（SQL Server）、mysql、postgres、oracle-rs
 - rusqlite
 - ratatui (TUI)
 - crossterm

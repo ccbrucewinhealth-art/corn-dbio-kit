@@ -37,33 +37,33 @@ The compiled binary will be at `target/release/corn-dbio-kit`.
 
 ## Command-Line Options
 
-| Option | Description | Default |
-|--------|------------|---------|
-| `--host` | Database server host | - |
-| `--port` | Database server port | - |
-| `--user` | Database user | - |
-| `--password` | Database password | - |
-| `--db-name` | Database name | - |
-| `--db-type` | Database type: mssql/oracle/mysql/postgresql/sqlite | mssql |
-| `--objects` | Tables to export (pattern, @file, or @sql:file) | - |
-| `--condition` | WHERE clause condition | - |
-| `--order-by` | ORDER BY clause | - |
-| `--hide-primary-key` | Exclude primary key columns | false |
-| `--output-format` | Output format: sql/sqlite/csv/excel/json/xml/md | sql |
-| `--output-dir` | Output directory | ./export |
-| `--compress` | Compress output: zip/bzip/tar | - |
-| `--delete-after-compress` | Delete files after compression | false |
-| `--page-size` | Rows per page for export | 10000 |
-| `--page-no` | Page number to export | - |
-| `--lang` | Language: en/tw/ja | en |
-| `--tui` | Use interactive TUI mode | false |
-| `--import` | Run import mode | false |
-| `--import-host` | Import target host | - |
-| `--import-port` | Import target port | - |
-| `--import-db-type` | Import target type | - |
-| `--import-user` | Import target user | - |
-| `--import-password` | Import target password | - |
-| `--import-db-name` | Import target database | - |
+| Option                    | Description                                         | Default  |
+| ------------------------- | --------------------------------------------------- | -------- |
+| `--host`                  | Database server host                                | -        |
+| `--port`                  | Database server port                                | -        |
+| `--user`                  | Database user                                       | -        |
+| `--password`              | Database password                                   | -        |
+| `--db-name`               | Database name                                       | -        |
+| `--db-type`               | Database type: mssql/oracle/mysql/postgresql/sqlite | mssql    |
+| `--objects`               | Tables to export (pattern, @file, or @sql:file)     | -        |
+| `--condition`             | WHERE clause condition                              | -        |
+| `--order-by`              | ORDER BY clause                                     | -        |
+| `--hide-primary-key`      | Exclude primary key columns                         | false    |
+| `--output-format`         | Output format: sql/sqlite/csv/excel/json/xml/md     | sql      |
+| `--output-dir`            | Output directory                                    | ./export |
+| `--compress`              | Compress output: zip/bzip/tar                       | -        |
+| `--delete-after-compress` | Delete files after compression                      | false    |
+| `--page-size`             | Rows per page for export                            | 10000    |
+| `--page-no`               | Page number to export                               | -        |
+| `--lang`                  | Language: en/tw/ja                                  | en       |
+| `--tui`                   | Use interactive TUI mode                            | false    |
+| `--import`                | Run import mode                                     | false    |
+| `--import-host`           | Import target host                                  | -        |
+| `--import-port`           | Import target port                                  | -        |
+| `--import-db-type`        | Import target type                                  | -        |
+| `--import-user`           | Import target user                                  | -        |
+| `--import-password`       | Import target password                              | -        |
+| `--import-db-name`        | Import target database                              | -        |
 
 ## Object Selector Syntax
 
@@ -155,7 +155,7 @@ src/
 ## Dependencies
 
 - Rust 2021 edition
-- odbc-api
+- Native DB connectors: tiberius (SQL Server), mysql, postgres, oracle-rs
 - rusqlite
 - ratatui (TUI)
 - crossterm
