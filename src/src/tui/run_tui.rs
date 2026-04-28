@@ -235,7 +235,9 @@ pub(crate) fn run_tui(mut cli: Cli) -> Result<Cli> {
     let mut object_def_sql = String::new();
     let mut object_def_is_sp = false;
     let mut dlg_save_btn: Option<Rect> = None;
+    let mut dlg_edit_btn: Option<Rect> = None;
     let mut dlg_insert_btn: Option<Rect> = None;
+    let mut dlg_refresh_btn: Option<Rect> = None;
     let mut dlg_delete_btn: Option<Rect> = None;
     let mut dlg_cancel_btn: Option<Rect> = None;
     let mut sql_popup = false;
@@ -927,13 +929,17 @@ pub(crate) fn run_tui(mut cli: Cli) -> Result<Cli> {
                             Constraint::Length(20),
                             Constraint::Length(20),
                             Constraint::Length(20),
+                            Constraint::Length(20),
+                            Constraint::Length(20),
                             Constraint::Min(1),
                         ])
                         .split(left[2]);
                     dlg_save_btn = Some(btns[0]);
-                    dlg_insert_btn = Some(btns[1]);
-                    dlg_delete_btn = Some(btns[2]);
-                    dlg_cancel_btn = Some(btns[3]);
+                    dlg_edit_btn = Some(btns[1]);
+                    dlg_insert_btn = Some(btns[2]);
+                    dlg_refresh_btn = Some(btns[3]);
+                    dlg_delete_btn = Some(btns[4]);
+                    dlg_cancel_btn = Some(btns[5]);
                     let save_btn = Paragraph::new("[ 儲存 Ctrl+F2 ]").block(
                         Block::default()
                             .borders(Borders::ALL)
@@ -943,7 +949,16 @@ pub(crate) fn run_tui(mut cli: Cli) -> Result<Cli> {
                                 Style::default()
                             }),
                     );
-                    let insert_btn = Paragraph::new("[ 新增 Ctrl+F4 ]").block(
+                    let edit_btn = Paragraph::new("[ 編輯資料列 F10 ]").block(
+                        Block::default()
+                            .borders(Borders::ALL)
+                            .border_style(if table_edit_focus == TableEditFocus::Grid {
+                                Style::default().fg(theme_focus)
+                            } else {
+                                Style::default()
+                            }),
+                    );
+                    let insert_btn = Paragraph::new("[ 新增 Alt+F4 ]").block(
                         Block::default()
                             .borders(Borders::ALL)
                             .border_style(if table_edit_focus == TableEditFocus::InsertBtn {
@@ -961,6 +976,11 @@ pub(crate) fn run_tui(mut cli: Cli) -> Result<Cli> {
                                 Style::default()
                             }),
                     );
+                    let refresh_btn = Paragraph::new("[ 重整 F5 ]").block(
+                        Block::default()
+                            .borders(Borders::ALL)
+                            .border_style(Style::default()),
+                    );
                     let cancel_btn = Paragraph::new("[ 取消 Ctrl+F3 ]").block(
                         Block::default()
                             .borders(Borders::ALL)
@@ -971,14 +991,33 @@ pub(crate) fn run_tui(mut cli: Cli) -> Result<Cli> {
                             }),
                     );
                     f.render_widget(save_btn, btns[0]);
-                    f.render_widget(insert_btn, btns[1]);
-                    f.render_widget(delete_btn, btns[2]);
-                    f.render_widget(cancel_btn, btns[3]);
+                    f.render_widget(edit_btn, btns[1]);
+                    f.render_widget(insert_btn, btns[2]);
+                    f.render_widget(refresh_btn, btns[3]);
+                    f.render_widget(delete_btn, btns[4]);
+                    f.render_widget(cancel_btn, btns[5]);
 
-                    let col_lines = table_columns_info
-                        .iter()
-                        .map(|(n, t, d)| Line::from(format!("{n} | {t} | {d}")))
-                        .collect::<Vec<_>>();
+                    let col_lines = if table_columns_info.is_empty() {
+                        if table_preview_cols.is_empty() {
+                            vec![Line::from("(no column metadata loaded)")]
+                        } else {
+                            table_preview_cols
+                                .iter()
+                                .map(|c| Line::from(format!("{c} | text")))
+                                .collect::<Vec<_>>()
+                        }
+                    } else {
+                        table_columns_info
+                            .iter()
+                            .map(|(n, t, d)| {
+                                if d.trim().is_empty() {
+                                    Line::from(format!("{n} | {t}"))
+                                } else {
+                                    Line::from(format!("{n} | {t} | {d}"))
+                                }
+                            })
+                            .collect::<Vec<_>>()
+                    };
                     let col_widget = Paragraph::new(col_lines)
                         .block(Block::default().title("columns").borders(Borders::ALL));
                     f.render_widget(col_widget, outer[1]);
@@ -1134,6 +1173,32 @@ pub(crate) fn run_tui(mut cli: Cli) -> Result<Cli> {
                                 }
                             }
                         }
+                        if let Some(r) = dlg_edit_btn {
+                            if in_rect(r) && table_edit_popup && table_edit_focus == TableEditFocus::Grid {
+                                if let Some(sel_row) = table_preview_rows.get(table_edit_row_idx).cloned() {
+                                    row_form_values = sel_row.clone();
+                                    row_form_original = sel_row;
+                                    row_form_idx = 1.min(table_preview_cols.len().saturating_sub(1));
+                                    row_form_insert_mode = false;
+                                    row_form_pk_auto_inc.clear();
+                                    row_form_popup = true;
+                                    table_edit_focus = TableEditFocus::RowForm;
+                                }
+                            }
+                        }
+                        if let Some(r) = dlg_refresh_btn {
+                            if in_rect(r) && table_edit_popup && !table_edit_table_name.is_empty() {
+                                match fetch_table_preview_page(&cli, &table_edit_table_name, table_page_no, table_page_size) {
+                                    Ok((cols, rows, qsql)) => {
+                                        table_preview_cols = cols;
+                                        table_preview_rows = rows;
+                                        table_edit_sql = qsql;
+                                        logs.push("data editor refreshed".to_string());
+                                    }
+                                    Err(e) => logs.push(format!("refresh failed: {e}")),
+                                }
+                            }
+                        }
                         if let Some(r) = dlg_cancel_btn {
                             if in_rect(r) {
                                 table_edit_popup = false;
@@ -1166,6 +1231,9 @@ pub(crate) fn run_tui(mut cli: Cli) -> Result<Cli> {
                             TableEditFocus::InsertBtn => TableEditFocus::DeleteBtn,
                             TableEditFocus::DeleteBtn => TableEditFocus::CancelBtn,
                             TableEditFocus::CancelBtn => TableEditFocus::SqlEditor,
+                            TableEditFocus::RowForm
+                            | TableEditFocus::RowFormSaveBtn
+                            | TableEditFocus::RowFormCancelBtn => TableEditFocus::RowForm,
                         };
                     }
                     KeyCode::Tab => {
@@ -1210,6 +1278,9 @@ pub(crate) fn run_tui(mut cli: Cli) -> Result<Cli> {
                             TableEditFocus::InsertBtn => TableEditFocus::SaveBtn,
                             TableEditFocus::DeleteBtn => TableEditFocus::InsertBtn,
                             TableEditFocus::CancelBtn => TableEditFocus::DeleteBtn,
+                            TableEditFocus::RowForm
+                            | TableEditFocus::RowFormSaveBtn
+                            | TableEditFocus::RowFormCancelBtn => TableEditFocus::RowForm,
                         };
                     }
                     KeyCode::BackTab => {
@@ -1223,6 +1294,18 @@ pub(crate) fn run_tui(mut cli: Cli) -> Result<Cli> {
                         }
                     }
                     KeyCode::F(10) => {
+                        if table_edit_popup && table_edit_focus == TableEditFocus::Grid {
+                            if let Some(sel_row) = table_preview_rows.get(table_edit_row_idx).cloned() {
+                                row_form_values = sel_row.clone();
+                                row_form_original = sel_row;
+                                row_form_idx = 1.min(table_preview_cols.len().saturating_sub(1));
+                                row_form_insert_mode = false;
+                                row_form_pk_auto_inc.clear();
+                                row_form_popup = true;
+                                table_edit_focus = TableEditFocus::RowForm;
+                            }
+                            continue;
+                        }
                         if !sql_popup
                             && !table_edit_popup
                             && !help_popup
@@ -1347,7 +1430,7 @@ pub(crate) fn run_tui(mut cli: Cli) -> Result<Cli> {
                             }
                         }
                     }
-                    KeyCode::F(4) if key.modifiers.contains(event::KeyModifiers::CONTROL) => {
+                    KeyCode::F(4) if key.modifiers.contains(event::KeyModifiers::ALT) => {
                         if table_edit_popup && !table_edit_table_name.is_empty() && !table_preview_cols.is_empty() {
                             let vals = table_preview_cols
                                 .iter()
@@ -1377,6 +1460,17 @@ pub(crate) fn run_tui(mut cli: Cli) -> Result<Cli> {
                                 }
                                 Err(e) => logs.push(format!("table insert failed: {e}")),
                             }
+                        }
+                    }
+                    KeyCode::F(5) if table_edit_popup && !table_edit_table_name.is_empty() => {
+                        match fetch_table_preview_page(&cli, &table_edit_table_name, table_page_no, table_page_size) {
+                            Ok((cols, rows, qsql)) => {
+                                table_preview_cols = cols;
+                                table_preview_rows = rows;
+                                table_edit_sql = qsql;
+                                logs.push("data editor refreshed".to_string());
+                            }
+                            Err(e) => logs.push(format!("refresh failed: {e}")),
                         }
                     }
                     KeyCode::F(5) if key.modifiers.contains(event::KeyModifiers::CONTROL) => {
@@ -1710,6 +1804,16 @@ pub(crate) fn run_tui(mut cli: Cli) -> Result<Cli> {
                                             Ok(sql) => {
                                                 table_edit_sql = sql;
                                                 logs.push("table row inserted".to_string());
+                                                if let Ok((cols, rows, qsql)) = fetch_table_preview_page(
+                                                    &cli,
+                                                    &table_edit_table_name,
+                                                    table_page_no,
+                                                    table_page_size,
+                                                ) {
+                                                    table_preview_cols = cols;
+                                                    table_preview_rows = rows;
+                                                    table_edit_sql = qsql;
+                                                }
                                             }
                                             Err(e) => logs.push(format!("table insert failed: {e}")),
                                         }
@@ -1730,6 +1834,16 @@ pub(crate) fn run_tui(mut cli: Cli) -> Result<Cli> {
                                                 }
                                             }
                                             logs.push("table row saved".to_string());
+                                            if let Ok((cols, rows, qsql)) = fetch_table_preview_page(
+                                                &cli,
+                                                &table_edit_table_name,
+                                                table_page_no,
+                                                table_page_size,
+                                            ) {
+                                                table_preview_cols = cols;
+                                                table_preview_rows = rows;
+                                                table_edit_sql = qsql;
+                                            }
                                         }
                                     }
                                     row_form_popup = false;
@@ -1870,19 +1984,6 @@ pub(crate) fn run_tui(mut cli: Cli) -> Result<Cli> {
                             continue;
                         }
 
-                        if table_edit_popup && table_edit_focus == TableEditFocus::Grid {
-                            if let Some(sel_row) = table_preview_rows.get(table_edit_row_idx).cloned() {
-                                row_form_values = sel_row.clone();
-                                row_form_original = sel_row;
-                                row_form_idx = 1.min(table_preview_cols.len().saturating_sub(1));
-                                row_form_insert_mode = false;
-                                row_form_pk_auto_inc.clear();
-                                row_form_popup = true;
-                                table_edit_focus = TableEditFocus::RowForm;
-                            }
-                            continue;
-                        }
-
                         if sql_popup {
                             logs.push("/exec-sql =>".to_string());
                             match tui_exec_sql(&cli, sql_input.trim(), 50) {
@@ -1927,8 +2028,22 @@ pub(crate) fn run_tui(mut cli: Cli) -> Result<Cli> {
                                                 table_preview_cols = cols;
                                                 table_preview_rows = rows;
                                                 table_edit_sql = sql;
-                                                table_columns_info = fetch_table_columns_info(&cli, &ts.name)
-                                                    .unwrap_or_default();
+                                                table_columns_info = match fetch_table_columns_info(&cli, &ts.name) {
+                                                    Ok(v) if !v.is_empty() => v,
+                                                    Ok(_) => table_preview_cols
+                                                        .iter()
+                                                        .map(|c| (c.clone(), "text".to_string(), "from-grid".to_string()))
+                                                        .collect::<Vec<_>>(),
+                                                    Err(e) => {
+                                                        logs.push(format!("load columns failed: {e}"));
+                                                        table_preview_cols
+                                                            .iter()
+                                                            .map(|c| {
+                                                                (c.clone(), "text".to_string(), "from-grid".to_string())
+                                                            })
+                                                            .collect::<Vec<_>>()
+                                                    }
+                                                };
                                                 table_edit_row_idx = 0;
                                                 table_edit_col_idx = if table_preview_cols.len() > 1 { 1 } else { 0 };
                                                 table_edit_cell = table_preview_rows
